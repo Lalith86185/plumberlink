@@ -1,4 +1,4 @@
-# Render.com blueprint — one-click deploy of PlumberLink (web + free Postgres).
+# Render.com blueprint — one-click deploy of NammaWork (web + free Postgres).
 services:
   - type: web
     name: plumberlink
