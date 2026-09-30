@@ -26,7 +26,8 @@ cloudflared tunnel --url http://127.0.0.1:8000 > tunnel.log 2>&1 &
 echo "Waiting for tunnel URL..."
 URL=""
 for i in $(seq 1 40); do
-  URL=$(grep -o 'https://[a-zA-Z0-9.-]*\.trycloudflare\.com' tunnel.log | head -1)
+  # Exclude api.trycloudflare.com (appears in error lines, not a tunnel URL)
+  URL=$(grep -o 'https://[a-zA-Z0-9.-]*\.trycloudflare\.com' tunnel.log | grep -v 'api\.trycloudflare\.com' | head -1)
   [ -n "$URL" ] && break
   sleep 1
 done
