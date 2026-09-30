@@ -1,7 +1,8 @@
 {% extends "core/base.html" %}
-{% block title %}Plumbers{% if locality %} in {{ locality.name }}{% endif %} — {{ brand_name }}{% endblock %}
+{% block title %}{% if category %}{{ category.name }}s{% else %}Professionals{% endif %}{% if locality %} in {{ locality.name }}{% endif %} — {{ brand_name }}{% endblock %}
 {% block content %}
-<h1>Plumbers{% if locality %} in {{ locality.name }}{% endif %}</h1>
+<h1>{% if category %}{{ category.icon }} {{ category.name }}s{% else %}Professionals{% endif %}{% if locality %} in {{ locality.name }}{% endif %}</h1>
+{% if category and category.description %}<p class="muted">{{ category.description }}</p>{% endif %}
 
 <form class="card" method="get" style="display:flex;gap:8px;flex-wrap:wrap;align-items:end">
   <div class="field" style="margin:0;min-width:170px">
@@ -13,11 +14,20 @@
   </div>
   <div class="field" style="margin:0;min-width:170px">
     <label>Service</label>
+    <select name="category" onchange="this.form.submit()">
+      <option value="">All services</option>
+      {% for c in categories %}<option value="{{ c.slug }}" {% if category and c.slug == category.slug %}selected{% endif %}>{{ c.icon }} {{ c.name }}</option>{% endfor %}
+    </select>
+  </div>
+  {% if services %}
+  <div class="field" style="margin:0;min-width:170px">
+    <label>Specific job</label>
     <select name="service" onchange="this.form.submit()">
-      <option value="">Any plumbing work</option>
+      <option value="">Any {{ category.name|default:"work"|lower }}</option>
       {% for s in services %}<option value="{{ s.id }}" {% if service and s.id == service.id %}selected{% endif %}>{{ s.name }}</option>{% endfor %}
     </select>
   </div>
+  {% endif %}
   <div class="field" style="margin:0">
     <label><input type="checkbox" name="emergency" value="1" {% if emergency %}checked{% endif %} onchange="this.form.submit()"> Emergency only</label>
   </div>
@@ -27,22 +37,24 @@
 {% if providers %}
 <div class="grid">
   {% for p in providers %}
-  <a class="card pro-card" style="text-decoration:none;color:inherit" href="{% url 'provider_detail' p.id %}">
+  <a class="card pro-card" style="text-decoration:none;color:inherit" href="{% url 'professional_detail' p.id %}">
     {% if p.photo %}<img class="avatar" src="{{ p.photo.url }}" alt="{{ p.display_name }}">
-    {% else %}<div class="avatar">👨‍🔧</div>{% endif %}
+    {% else %}<div class="avatar">{% if p.primary_category %}{{ p.primary_category.icon }}{% else %}👷{% endif %}</div>{% endif %}
     <div>
       <strong>{{ p.display_name }}</strong>
+      {% if p.business_name %}<br><span class="muted small">{{ p.business_name }}</span>{% endif %}
       {% if p.is_demo %}<span class="badge badge-demo">DEMO</span>{% endif %}
       {% if p.is_featured %}<span class="badge badge-featured">★ Featured</span>{% endif %}
       {% if p.emergency_available %}<span class="badge badge-emergency">🚨 Emergency</span>{% endif %}
       <br>
       <span class="stars">{% if p.rating_count %}★ {{ p.rating_avg }} ({{ p.rating_count }}){% else %}New — no reviews yet{% endif %}</span><br>
+      <span class="muted small">{% for c in p.categories %}{{ c.icon }} {{ c.name }}{% if not forloop.last %} · {% endif %}{% endfor %}</span><br>
       <span class="muted small">{{ p.experience_years }} yrs exp · {{ p.areas.all|join:", " }}</span>
     </div>
   </a>
   {% endfor %}
 </div>
 {% else %}
-<div class="card"><p>No plumbers listed for this search yet. Try another locality, or <a href="{% url 'home' %}">go back</a>.</p></div>
+<div class="card"><p>No professionals listed for this search yet. Try another locality or service, or <a href="{% url 'home' %}">go back</a>.</p></div>
 {% endif %}
 {% endblock %}

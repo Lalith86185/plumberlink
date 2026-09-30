@@ -1,25 +1,43 @@
 {% extends "core/base.html" %}
+{% load core_extras %}
 {% block title %}Booking {{ booking.ref_code }}{% endblock %}
 {% block content %}
 <h1>Booking {{ booking.ref_code }}</h1>
 <div class="card">
   <p><span class="status st-{{ booking.status }}">{{ booking.get_status_display }}</span></p>
+
+  {% if flow_index >= 0 %}
+  <ol class="timeline">
+    {% for step in flow %}
+    <li class="{% if forloop.counter0 < flow_index %}done{% elif forloop.counter0 == flow_index %}now{% endif %}">
+      <span class="dot"></span>{{ flow_labels|get_item:step }}
+    </li>
+    {% endfor %}
+  </ol>
+  {% endif %}
+
   <table class="tbl">
-    <tr><th>Plumber</th><td><a href="{% url 'provider_detail' booking.provider.id %}">{{ booking.provider.display_name }}</a> · <a href="tel:{{ booking.provider.phone }}">📞 {{ booking.provider.phone }}</a></td></tr>
-    <tr><th>Service</th><td>{{ booking.service|default:"General plumbing work" }}</td></tr>
+    <tr><th>Professional</th><td><a href="{% url 'professional_detail' booking.provider.id %}">{{ booking.provider.display_name }}</a> · <a href="tel:{{ booking.provider.phone }}">📞 {{ booking.provider.phone }}</a></td></tr>
+    <tr><th>Service</th><td>{% if booking.service %}{{ booking.service.category.icon }} {{ booking.service.category.name }} — {{ booking.service }}{% else %}General work{% endif %}</td></tr>
     <tr><th>Locality</th><td>{{ booking.locality|default:"—" }}{% if booking.area_detail %} ({{ booking.area_detail }}){% endif %}</td></tr>
     <tr><th>Preferred slot</th><td>{{ booking.preferred_date|date:"d M Y"|default:"—" }} {{ booking.preferred_time }}</td></tr>
     <tr><th>Requested</th><td>{{ booking.created_at|date:"d M Y, g:i A" }}</td></tr>
-    {% if booking.provider_notes %}<tr><th>Note from plumber</th><td>{{ booking.provider_notes }}</td></tr>{% endif %}
+    {% if booking.provider_notes %}<tr><th>Note from professional</th><td>{{ booking.provider_notes }}</td></tr>{% endif %}
   </table>
   {% if booking.status == "requested" %}
-  <p class="muted">The plumber has your request and will confirm by phone shortly.</p>
+  <p class="muted">The professional has your request and will confirm by phone shortly.</p>
   {% elif booking.status == "accepted" %}
-  <p>✅ Accepted! The plumber will reach out to confirm the visit time.</p>
+  <p>✅ Accepted! The professional will reach out to confirm the visit time.</p>
+  {% elif booking.status == "on_the_way" %}
+  <p>🛵 On the way! The professional is heading to your location.</p>
+  {% elif booking.status == "in_progress" %}
+  <p>🔧 Service started — the work is underway.</p>
   {% elif booking.status == "completed" %}
   <p>✅ Service completed. {% if can_review %}<a class="btn btn-sm" href="{{ review_link }}">⭐ Rate this service</a>{% endif %}</p>
   {% elif booking.status == "rejected" %}
-  <p class="muted">This plumber couldn't take the job. <a href="{% url 'provider_list' %}">Try another plumber</a>.</p>
+  <p class="muted">This professional couldn't take the job. <a href="{% url 'professional_list' %}">Try another professional</a>.</p>
+  {% elif booking.status == "cancelled" %}
+  <p class="muted">This booking was cancelled.</p>
   {% endif %}
   <p class="muted small">Save your reference <strong>{{ booking.ref_code }}</strong> — you can <a href="{% url 'booking_track' %}">track this booking</a> anytime.</p>
 </div>

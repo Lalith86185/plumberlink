@@ -17,16 +17,20 @@
 </div>
 <div class="card">
   <h3>Services & pricing</h3>
+  <p class="muted small">Tick the services you offer across all your trades — the same list powers your public profile, search and booking.</p>
   <form method="post">
     {% csrf_token %}
     <input type="hidden" name="save_services" value="1">
-    <table class="tbl">
-      <tr><th>Offer</th><th>Starting price ₹</th></tr>
-      {% for row in service_rows %}
-      <tr><td>{{ row.check }} <label>{{ row.check.label }}</label>{% if row.check.errors %}{{ row.check.errors }}{% endif %}</td>
-          <td>{{ row.price }}{% if row.price.errors %}{{ row.price.errors }}{% endif %}</td></tr>
-      {% endfor %}
-    </table>
+    {% for cat, rows in service_groups %}
+      <h4 style="margin:14px 0 6px">{{ cat.icon }} {{ cat.name }}</h4>
+      <table class="tbl">
+        <tr><th>Offer</th><th>Starting price ₹</th></tr>
+        {% for row in rows %}
+        <tr><td>{{ row.check }} <label>{{ row.check.label }}</label>{% if row.check.errors %}{{ row.check.errors }}{% endif %}</td>
+            <td>{{ row.price }}{% if row.price.errors %}{{ row.price.errors }}{% endif %}</td></tr>
+        {% endfor %}
+      </table>
+    {% endfor %}
     <button class="btn" type="submit">Save services</button>
   </form>
 </div>

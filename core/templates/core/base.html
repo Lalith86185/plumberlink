@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="{{ brand_name }} — {{ brand_tagline }} Find plumbers, electricians, carpenters, AC technicians, cleaners and more across Bengaluru.">
 <title>{% block title %}{{ brand_name }} — {{ brand_tagline }}{% endblock %}</title>
 {% load static %}
 <link rel="stylesheet" href="{% static 'core/css/style.css' %}">
@@ -12,15 +13,17 @@
   <div class="wrap topbar-in">
     <a class="brand" href="{% url 'home' %}">🔧 {{ brand_name }}</a>
     <nav class="topnav">
-      <a href="{% url 'provider_list' %}">Find a plumber</a>
+      <a href="{% url 'professional_list' %}">Find Professionals</a>
       <a href="{% url 'booking_track' %}">Track booking</a>
       {% if user.is_authenticated %}
         {% if user.is_staff %}<a href="{% url 'admin_dashboard' %}">Admin</a>{% endif %}
         {% if user.provider_profile %}<a href="{% url 'provider_dashboard' %}">Dashboard</a>{% endif %}
-        <a href="{% url 'provider_logout' %}">Logout</a>
+        {% if user.customer_profile %}<a href="{% url 'customer_dashboard' %}">My bookings</a>{% endif %}
+        <a href="{% url 'customer_logout' %}">Logout</a>
       {% else %}
-        <a href="{% url 'provider_login' %}">Provider login</a>
-        <a class="btn btn-sm" href="{% url 'provider_register' %}">Join as plumber</a>
+        <a href="{% url 'customer_login' %}">Login</a>
+        <a href="{% url 'provider_login' %}">Professional login</a>
+        <a class="btn btn-sm" href="{% url 'provider_register' %}">Join as Professional</a>
       {% endif %}
     </nav>
   </div>
@@ -35,8 +38,9 @@
 
 <footer class="footer">
   <div class="wrap">
-    <p><strong>{{ brand_name }}</strong> — {{ brand_tagline }}.</p>
-    <p class="muted">Pilot in Bengaluru. Customer addresses are never shown publicly.</p>
+    <p><strong>🔧 {{ brand_name }}</strong> — {{ brand_tagline }}</p>
+    <p class="muted">Plumbers · Electricians · Carpenters · AC Technicians · Cleaners · Appliance Repair · CCTV · Painters — across Bengaluru.</p>
+    <p class="muted small">Are you a professional? <a href="{% url 'provider_register' %}">Join {{ brand_name }}</a> · <a href="{% url 'booking_track' %}">Track a booking</a></p>
   </div>
 </footer>
 </body>

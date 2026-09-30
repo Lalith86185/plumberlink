@@ -18,12 +18,13 @@ from django.urls import reverse
 from django.utils import timezone
 
 from .forms import (
-    BookingForm, BookingTrackForm, PlatformSettingsForm, ProviderBookingActionForm,
+    BOOKING_TRANSITIONS, BookingForm, BookingTrackForm, CustomerProfileForm,
+    CustomerRegistrationForm, PlatformSettingsForm, ProviderBookingActionForm,
     ProviderProfileForm, ProviderRegistrationForm, ProviderServicesForm, QRCodeForm,
-    ReviewForm,
+    ReviewForm, ServiceCategoryForm,
 )
 from .models import (
-    Booking, Earning, Locality, PlatformSettings, ProviderProfile, QRCode,
+    Booking, CustomerProfile, Earning, Locality, PlatformSettings, ProviderProfile, QRCode,
     Review, Service, ServiceCategory,
 )
 
@@ -83,14 +84,19 @@ def review_url(booking: Booking) -> str:
 
 def home(request):
     localities = Locality.objects.filter(active=True)
-    category = ServiceCategory.objects.filter(slug="plumber").first()
-    services = category.services.filter(active=True) if category else []
+    categories = ServiceCategory.objects.filter(active=True).prefetch_related("services")
     locality_slug = request.GET.get("locality", "")
-    if locality_slug:
-        return redirect(f"{reverse('provider_list')}?locality={locality_slug}")
+    category_slug = request.GET.get("category", "")
+    if locality_slug or category_slug:
+        params = []
+        if locality_slug:
+            params.append(f"locality={locality_slug}")
+        if category_slug:
+            params.append(f"category={category_slug}")
+        return redirect(f"{reverse('professional_list')}?{'&'.join(params)}")
     return render(request, "core/home.html", {
-        "localities": localities, "services": services,
-        "selected_locality": locality_slug,
+        "localities": localities, "categories": categories,
+        "selected_locality": locality_slug, "selected_category": category_slug,
     })
 
 
@@ -98,51 +104,83 @@ def provider_list(request):
     providers = (ProviderProfile.objects
                  .filter(is_approved=True, is_available=True)
                  .select_related("user")
-                 .prefetch_related("areas", "offered_services__service"))
+                 .prefetch_related("areas", "offered_services__service__category"))
     locality_slug = request.GET.get("locality", "")
+    category_slug = request.GET.get("category", "")
     service_id = request.GET.get("service", "")
     emergency = request.GET.get("emergency", "")
     locality = None
     if locality_slug:
         locality = get_object_or_404(Locality, slug=locality_slug, active=True)
         providers = providers.filter(areas=locality)
+    category = None
+    if category_slug:
+        category = get_object_or_404(ServiceCategory, slug=category_slug, active=True)
+        providers = providers.filter(offered_services__service__category=category)
     service = None
     if service_id:
         service = get_object_or_404(Service, pk=service_id, active=True)
+        if category and service.category_id != category.id:
+            raise Http404
         providers = providers.filter(offered_services__service=service)
     if emergency:
         providers = providers.filter(emergency_available=True)
+    services_qs = Service.objects.filter(active=True)
+    if category:
+        services_qs = services_qs.filter(category=category)
     return render(request, "core/provider_list.html", {
         "providers": providers.distinct(),
         "localities": Locality.objects.filter(active=True),
-        "services": Service.objects.filter(active=True, category__slug="plumber").order_by("sort_order"),
-        "locality": locality, "service": service, "emergency": emergency,
+        "categories": ServiceCategory.objects.filter(active=True),
+        "services": services_qs.order_by("sort_order"),
+        "locality": locality, "category": category,
+        "service": service, "emergency": emergency,
     })
 
 
 def provider_detail(request, pk):
     provider = get_object_or_404(
         ProviderProfile.objects.select_related("user").prefetch_related(
-            "areas", "offered_services__service"),
+            "areas", "offered_services__service__category"),
         pk=pk, is_approved=True, is_available=True)
     reviews = provider.reviews.select_related("booking").order_by("-created_at")[:20]
+    # Services grouped by category for the universal profile layout.
+    services_by_category = []
+    for cat in provider.categories:
+        offered = [ps for ps in provider.offered_services.all()
+                   if ps.service.category_id == cat.id]
+        if offered:
+            services_by_category.append((cat, offered))
     return render(request, "core/provider_detail.html",
-                  {"provider": provider, "reviews": reviews})
+                  {"provider": provider, "reviews": reviews,
+                   "services_by_category": services_by_category})
 
 
 def booking_create(request, provider_id):
     provider = get_object_or_404(ProviderProfile, pk=provider_id,
                                  is_approved=True, is_available=True)
+    initial = {}
+    if request.user.is_authenticated and hasattr(request.user, "customer_profile"):
+        cp = request.user.customer_profile
+        initial = {"customer_name": request.user.get_full_name() or request.user.first_name,
+                   "customer_phone": cp.phone}
     if request.method == "POST":
         form = BookingForm(request.POST, provider=provider)
         if form.is_valid():
             booking = form.save(commit=False)
             booking.provider = provider
+            if request.user.is_authenticated and hasattr(request.user, "customer_profile"):
+                booking.customer = request.user
             booking.save()
             messages.success(request, f"Booking request {booking.ref_code} sent to {provider.display_name}.")
             return redirect("booking_detail", ref=booking.ref_code)
     else:
-        form = BookingForm(provider=provider)
+        # "Rebook" deep-link: ?service=<id>&locality=<slug>
+        if request.GET.get("service"):
+            initial["service"] = request.GET.get("service")
+        if request.GET.get("locality"):
+            initial["locality"] = request.GET.get("locality")
+        form = BookingForm(provider=provider, initial=initial)
     return render(request, "core/booking_form.html", {"form": form, "provider": provider})
 
 
@@ -152,9 +190,14 @@ def booking_detail(request, ref):
         ref_code__iexact=ref.strip())
     can_review = (booking.status == Booking.STATUS_COMPLETED
                   and not hasattr(booking, "review"))
+    flow = Booking.STATUS_FLOW
+    flow_index = flow.index(booking.status) if booking.status in flow else -1
+    flow_labels = dict(Booking.STATUS_CHOICES)
     return render(request, "core/booking_detail.html",
                   {"booking": booking, "can_review": can_review,
-                   "review_link": review_url(booking) if can_review else ""})
+                   "review_link": review_url(booking) if can_review else "",
+                   "flow": flow, "flow_index": flow_index,
+                   "flow_labels": flow_labels})
 
 
 def booking_track(request):
@@ -177,7 +220,7 @@ def review_create(request, token):
     booking = get_object_or_404(Booking.objects.select_related("provider"), review_token=token)
     if hasattr(booking, "review"):
         messages.info(request, "Thanks — a review has already been submitted for this booking.")
-        return redirect("provider_detail", pk=booking.provider_id)
+        return redirect("professional_detail", pk=booking.provider_id)
     if booking.status != Booking.STATUS_COMPLETED:
         messages.warning(request, "You can submit a review after the service is marked completed.")
         return redirect("booking_detail", ref=booking.ref_code)
@@ -190,19 +233,22 @@ def review_create(request, token):
             review.customer_name = booking.customer_name
             review.save()  # triggers provider.refresh_rating()
             messages.success(request, "Thank you! Your review helps other customers.")
-            return redirect("provider_detail", pk=booking.provider_id)
+            return redirect("professional_detail", pk=booking.provider_id)
     else:
         form = ReviewForm()
     return render(request, "core/review_form.html", {"form": form, "booking": booking})
 
 
 def qr_redirect(request, slug):
+    """Service-independent QR landing: count the scan, let the customer pick a
+    trade (and locality), then go to the universal professional listing."""
     qr = get_object_or_404(QRCode, slug=slug, is_active=True)
     QRCode.objects.filter(pk=qr.pk).update(scans=F("scans") + 1)
-    dest = reverse("provider_list")
-    if qr.locality_id:
-        dest += f"?locality={qr.locality.slug}"
-    return redirect(dest)
+    categories = ServiceCategory.objects.filter(active=True).prefetch_related("services")
+    return render(request, "core/qr_landing.html", {
+        "qr": qr, "categories": categories,
+        "localities": Locality.objects.filter(active=True),
+    })
 
 
 def media_serve(request, path):
@@ -231,7 +277,14 @@ def provider_register(request):
             return redirect("provider_pending")
     else:
         form = ProviderRegistrationForm()
-    return render(request, "core/provider_register.html", {"form": form})
+    categories = ServiceCategory.objects.filter(active=True).order_by("sort_order", "name")
+    service_groups = [(c, list(c.services.filter(active=True).order_by("sort_order")))
+                      for c in categories]
+    selected_services = set(form["services"].value() or [])
+    return render(request, "core/provider_register.html", {
+        "form": form, "service_groups": service_groups,
+        "selected_services": {str(v) for v in selected_services},
+    })
 
 
 def provider_login(request):
@@ -305,22 +358,17 @@ def provider_bookings(request):
         booking = get_object_or_404(Booking, pk=request.POST.get("booking_id"), provider=p)
         if form.is_valid():
             action = form.cleaned_data["action"]
-            if action == "accept" and booking.status == Booking.STATUS_REQUESTED:
-                booking.status = Booking.STATUS_ACCEPTED
-                messages.success(request, f"Booking {booking.ref_code} accepted.")
-            elif action == "reject" and booking.status == Booking.STATUS_REQUESTED:
-                booking.status = Booking.STATUS_REJECTED
-                messages.info(request, f"Booking {booking.ref_code} rejected.")
-            elif action == "complete" and booking.status == Booking.STATUS_ACCEPTED:
-                booking.status = Booking.STATUS_COMPLETED
-                booking.final_amount = form.cleaned_data["final_amount"]
-                messages.success(request, f"Booking {booking.ref_code} marked completed.")
-            else:
+            new_status = BOOKING_TRANSITIONS.get((booking.status, action))
+            if not new_status:
                 messages.error(request, "That action is not valid for this booking's status.")
                 return redirect("provider_bookings")
+            booking.status = new_status
+            if action == "complete":
+                booking.final_amount = form.cleaned_data["final_amount"]
             booking.provider_notes = form.cleaned_data["provider_notes"]
             booking.save()
             charge_for_booking(booking)
+            messages.success(request, f"Booking {booking.ref_code}: {booking.get_status_display()}.")
             return redirect("provider_bookings")
     else:
         form = ProviderBookingActionForm()
@@ -352,14 +400,20 @@ def provider_profile(request):
     else:
         pform = ProviderProfileForm(instance=p)
         sform = ProviderServicesForm(provider=p)
-    service_rows = []
-    for svc in Service.objects.filter(active=True, category__slug="plumber").order_by("sort_order"):
-        service_rows.append({
-            "check": sform[f"svc_{svc.id}"],
-            "price": sform[f"price_{svc.id}"],
-        })
+    # Services grouped by category — the same editor works for every trade.
+    service_groups = []
+    for cat in ServiceCategory.objects.filter(active=True).order_by("sort_order", "name"):
+        rows = []
+        for svc in cat.services.filter(active=True).order_by("sort_order"):
+            rows.append({
+                "check": sform[f"svc_{svc.id}"],
+                "price": sform[f"price_{svc.id}"],
+            })
+        if rows:
+            service_groups.append((cat, rows))
     return render(request, "core/p_profile.html",
-                  {"profile": p, "pform": pform, "sform": sform, "service_rows": service_rows})
+                  {"profile": p, "pform": pform, "sform": sform,
+                   "service_groups": service_groups})
 
 
 @provider_required
@@ -398,6 +452,8 @@ def admin_dashboard(request):
         "pending": providers.filter(is_approved=False).count(),
         "listed": providers.filter(is_approved=True, is_available=True).count(),
         "demo_providers": providers.filter(is_demo=True).count(),
+        "customers_total": CustomerProfile.objects.count(),
+        "categories_total": ServiceCategory.objects.filter(active=True).count(),
         "bookings_total": bookings.count(),
         "by_status": by_status,
         "status_choices": Booking.STATUS_CHOICES,
@@ -499,7 +555,7 @@ def admin_qr_create(request):
 
 @staff_member_required
 def admin_qr_detail(request, slug):
-    qr = get_object_or_404(QRCode.objects.select_related("locality"), slug=slug)
+    qr = get_object_or_404(QRCode.objects.select_related("locality", "service_category"), slug=slug)
     target = f"{settings.PUBLIC_BASE_URL}{reverse('qr_redirect', kwargs={'slug': qr.slug})}"
     if request.method == "POST" and request.POST.get("action") == "regen":
         target = build_qr_image(qr)
@@ -519,3 +575,146 @@ def admin_settings(request):
     else:
         form = PlatformSettingsForm(instance=cfg)
     return render(request, "core/a_settings.html", {"form": form, "cfg": cfg})
+
+
+# ---------------------------------------------------------------- customer accounts
+
+def _claim_guest_bookings(user, phone):
+    """Link past guest bookings made with this phone number to the account."""
+    Booking.objects.filter(
+        customer__isnull=True, customer_phone=phone).update(customer=user)
+
+
+def customer_register(request):
+    if request.user.is_authenticated:
+        return redirect("customer_dashboard")
+    if request.method == "POST":
+        form = CustomerRegistrationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            _claim_guest_bookings(user, user.username)
+            login(request, user)
+            messages.success(request, "Welcome to NammaWork! Your account is ready.")
+            return redirect("customer_dashboard")
+    else:
+        form = CustomerRegistrationForm()
+    return render(request, "core/c_register.html", {"form": form})
+
+
+def customer_login(request):
+    if request.user.is_authenticated:
+        if hasattr(request.user, "customer_profile"):
+            return redirect("customer_dashboard")
+        if hasattr(request.user, "provider_profile"):
+            return redirect("provider_dashboard")
+        if request.user.is_staff:
+            return redirect("admin_dashboard")
+    if request.method == "POST":
+        form = AuthenticationForm(request, data=request.POST)
+        if form.is_valid():
+            user = form.get_user()
+            login(request, user)
+            if hasattr(user, "customer_profile"):
+                _claim_guest_bookings(user, user.customer_profile.phone)
+                return redirect("customer_dashboard")
+            if hasattr(user, "provider_profile"):
+                return redirect("provider_dashboard")
+            if user.is_staff:
+                return redirect("admin_dashboard")
+            messages.error(request, "This account is not a customer account.")
+            logout(request)
+    else:
+        form = AuthenticationForm()
+    return render(request, "core/c_login.html", {"form": form})
+
+
+def customer_logout(request):
+    logout(request)
+    messages.info(request, "Logged out.")
+    return redirect("home")
+
+
+def customer_required(view):
+    @wraps(view)
+    @login_required
+    def wrapper(request, *args, **kwargs):
+        try:
+            request.customer = request.user.customer_profile
+        except CustomerProfile.DoesNotExist:
+            messages.error(request, "Please log in with a customer account.")
+            return redirect("customer_login")
+        return view(request, *args, **kwargs)
+    return wrapper
+
+
+@customer_required
+def customer_dashboard(request):
+    bookings = (request.user.customer_bookings
+                .select_related("provider", "service__category", "locality")
+                .order_by("-created_at"))
+    active_statuses = [Booking.STATUS_REQUESTED, Booking.STATUS_ACCEPTED,
+                       Booking.STATUS_ON_THE_WAY, Booking.STATUS_IN_PROGRESS]
+    return render(request, "core/c_dashboard.html", {
+        "active_bookings": bookings.filter(status__in=active_statuses),
+        "past_bookings": bookings.exclude(status__in=active_statuses),
+        "flow": Booking.STATUS_FLOW,
+    })
+
+
+@customer_required
+def customer_profile(request):
+    if request.method == "POST":
+        form = CustomerProfileForm(request.POST, user=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Profile updated.")
+            return redirect("customer_dashboard")
+    else:
+        form = CustomerProfileForm(user=request.user)
+    return render(request, "core/c_profile.html", {"form": form})
+
+
+# ---------------------------------------------------------------- admin: categories & customers
+
+@staff_member_required
+def admin_categories(request):
+    cats = (ServiceCategory.objects.all()
+            .annotate(n_services=Count("services", distinct=True),
+                      n_providers=Count("services__providers", distinct=True))
+            .order_by("sort_order", "name"))
+    return render(request, "core/a_categories.html", {"categories": cats})
+
+
+@staff_member_required
+def admin_category_edit(request, pk=None):
+    cat = get_object_or_404(ServiceCategory, pk=pk) if pk else None
+    if request.method == "POST":
+        form = ServiceCategoryForm(request.POST, instance=cat)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"Category '{form.instance.name}' saved.")
+            return redirect("admin_categories")
+    else:
+        form = ServiceCategoryForm(instance=cat)
+    services = cat.services.order_by("sort_order") if cat else []
+    return render(request, "core/a_category_form.html",
+                  {"form": form, "category": cat, "services": services})
+
+
+@staff_member_required
+def admin_category_delete(request, pk):
+    cat = get_object_or_404(ServiceCategory, pk=pk)
+    if request.method == "POST":
+        name = cat.name
+        cat.delete()  # cascades to its services and provider-service links
+        messages.warning(request, f"Category '{name}' and its services removed.")
+        return redirect("admin_categories")
+    return render(request, "core/a_category_confirm_delete.html", {"category": cat})
+
+
+@staff_member_required
+def admin_customers(request):
+    customers = (CustomerProfile.objects.select_related("user")
+                 .annotate(n_bookings=Count("user__customer_bookings"))
+                 .order_by("-created_at"))
+    return render(request, "core/a_customers.html", {"customers": customers})

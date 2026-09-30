@@ -1,0 +1,15 @@
+{% extends "core/base.html" %}
+{% block title %}My profile — {{ brand_name }}{% endblock %}
+{% block content %}
+<h1>My profile</h1>
+<div class="card">
+<form method="post">
+  {% csrf_token %}
+  {% for f in form %}
+  <div class="field">{{ f.label_tag }}{{ f }}{% if f.help_text %}<div class="helptext">{{ f.help_text }}</div>{% endif %}{{ f.errors }}</div>
+  {% endfor %}
+  <button class="btn btn-block" type="submit">Save</button>
+</form>
+<p><a href="{% url 'customer_dashboard' %}">← Back to my bookings</a></p>
+</div>
+{% endblock %}

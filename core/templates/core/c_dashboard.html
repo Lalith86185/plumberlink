@@ -1,0 +1,36 @@
+{% extends "core/base.html" %}
+{% block title %}My bookings — {{ brand_name }}{% endblock %}
+{% block content %}
+<h1>My bookings</h1>
+<p><a class="btn btn-sm" href="{% url 'home' %}">➕ Book a new service</a> <a class="btn btn-sm" href="{% url 'customer_profile' %}">👤 My profile</a></p>
+
+<h2>Current</h2>
+{% for b in active_bookings %}
+<div class="card">
+  <p><strong><a href="{% url 'booking_detail' b.ref_code %}">{{ b.ref_code }}</a></strong>
+     <span class="status st-{{ b.status }}">{{ b.get_status_display }}</span>
+     <span class="muted small">{{ b.created_at|date:"d M Y" }}</span></p>
+  <p>{% if b.service %}{{ b.service.category.icon }} {{ b.service.category.name }} — {{ b.service }}{% else %}General work{% endif %}<br>
+     <span class="muted small">with <a href="{% url 'professional_detail' b.provider.id %}">{{ b.provider.display_name }}</a> · {{ b.preferred_date|date:"d M Y"|default:"ASAP" }} {{ b.preferred_time }}</span></p>
+  <div class="actions-row">
+    <a class="btn btn-sm" href="{% url 'booking_detail' b.ref_code %}">Track</a>
+    <a class="btn btn-sm" href="tel:{{ b.provider.phone }}">📞 Call</a>
+  </div>
+</div>
+{% empty %}<div class="card"><p class="muted">No current bookings. <a href="{% url 'home' %}">Find a professional</a> to get started.</p></div>{% endfor %}
+
+<h2>Previous</h2>
+{% for b in past_bookings %}
+<div class="card">
+  <p><strong><a href="{% url 'booking_detail' b.ref_code %}">{{ b.ref_code }}</a></strong>
+     <span class="status st-{{ b.status }}">{{ b.get_status_display }}</span>
+     <span class="muted small">{{ b.created_at|date:"d M Y" }}</span></p>
+  <p>{% if b.service %}{{ b.service.category.icon }} {{ b.service.category.name }} — {{ b.service }}{% else %}General work{% endif %}<br>
+     <span class="muted small">with <a href="{% url 'professional_detail' b.provider.id %}">{{ b.provider.display_name }}</a></span></p>
+  <div class="actions-row">
+    <a class="btn btn-sm" href="{% url 'booking_create' b.provider.id %}?service={{ b.service.id|default:'' }}&locality={{ b.locality.slug|default:'' }}">↻ Rebook</a>
+    {% if b.status == "completed" and not b.review %}<a class="btn btn-sm" href="{% url 'review_create' b.review_token %}">⭐ Rate service</a>{% endif %}
+  </div>
+</div>
+{% empty %}<div class="card"><p class="muted">Nothing here yet.</p></div>{% endfor %}
+{% endblock %}

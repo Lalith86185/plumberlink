@@ -1,41 +1,59 @@
 {% extends "core/base.html" %}
 {% block content %}
 <div class="hero">
-  <h1>Need a plumber in Bengaluru?</h1>
-  <p>Find trusted local plumbers near you. Call directly or request a booking in under a minute.</p>
+  <h1>Need a service at home?</h1>
+  <p class="hero-sub">Find trusted local professionals near you.</p>
   <form class="searchbar" method="get" action="{% url 'home' %}">
-    <select name="locality" required>
+    <select name="locality" required aria-label="Select your locality">
       <option value="">📍 Select your locality…</option>
-      {% for l in localities %}<option value="{{ l.slug }}">{{ l.name }}</option>{% endfor %}
+      {% for l in localities %}<option value="{{ l.slug }}" {% if l.slug == selected_locality %}selected{% endif %}>{{ l.name }}</option>{% endfor %}
     </select>
-    <button class="btn btn-sm" style="padding:12px 22px" type="submit">Find plumbers</button>
+    <select name="category" required aria-label="What service do you need?">
+      <option value="">🔧 What service do you need? …</option>
+      {% for c in categories %}<option value="{{ c.slug }}" {% if c.slug == selected_category %}selected{% endif %}>{{ c.icon }} {{ c.name }}</option>{% endfor %}
+    </select>
+    <button class="btn btn-sm" style="padding:12px 22px" type="submit">Find Professionals</button>
   </form>
 </div>
 
-<h2>Services</h2>
+<h2>What do you need help with?</h2>
 <div class="grid">
-  <a class="card pro-card" style="text-decoration:none;color:inherit" href="{% url 'provider_list' %}">
-    <div class="avatar">🔧</div>
-    <div><strong>Plumber</strong><br>
-      <span class="muted small">Tap repair · Pipe leakage · Bathroom plumbing · Drain blockage · Water tank work · Emergency</span>
+  {% for c in categories %}
+  <div class="card pro-card">
+    <div class="avatar">{{ c.icon }}</div>
+    <div>
+      <strong>{{ c.name }}</strong><br>
+      <span class="muted small">{{ c.description|default:c.tagline }}</span>
+      <div style="margin-top:10px"><a class="btn btn-sm" href="{% url 'professional_list' %}?category={{ c.slug }}">Find Professionals</a></div>
     </div>
-  </a>
-  {% for c in service_categories %}{% if c.slug != "plumber" %}
-  <div class="card pro-card" style="opacity:{% if c.active %}1{% else %}.6{% endif %}">
-    <div class="avatar">🛠️</div>
-    <div><strong>{{ c.name }}</strong><br><span class="muted small">{% if c.active %}Now live{% else %}Coming soon{% endif %}</span></div>
   </div>
-  {% endif %}{% endfor %}
+  {% endfor %}
+  <div class="card pro-card">
+    <div class="avatar">➕</div>
+    <div>
+      <strong>More Services</strong><br>
+      <span class="muted small">New trades launching across Bengaluru soon.</span>
+      <div style="margin-top:10px"><a class="btn btn-sm" href="{% url 'professional_list' %}">Browse all</a></div>
+    </div>
+  </div>
 </div>
 
 <div class="card">
-  <h3>How it works</h3>
-  <ol>
-    <li><strong>Pick your locality</strong> — see plumbers who actually serve your area.</li>
-    <li><strong>Compare profiles</strong> — ratings, reviews, services and starting prices.</li>
+  <h3>How {{ brand_name }} works</h3>
+  <ol class="steps">
+    <li><strong>Choose a service</strong> — plumber, electrician, carpenter, cleaner and more.</li>
+    <li><strong>Select your locality</strong> — see professionals who actually serve your area.</li>
+    <li><strong>Compare professionals</strong> — ratings, reviews, services and starting prices.</li>
     <li><strong>Call or book</strong> — request a booking and track it with your reference code.</li>
-    <li><strong>Rate the work</strong> — your review keeps quality high.</li>
+    <li><strong>Get the work done</strong> — the professional confirms by phone and visits you.</li>
+    <li><strong>Rate your experience</strong> — your review keeps quality high for everyone.</li>
   </ol>
-  <p class="muted small">For plumbers: <a href="{% url 'provider_register' %}">register free</a> and get listed after a quick verification.</p>
+</div>
+
+<div class="card cta-card">
+  <h3>For Professionals</h3>
+  <p><strong>Get more local customers with {{ brand_name }}.</strong><br>
+  <span class="muted">Free to join. List your trades — plumbing, electrical, carpentry, cleaning and more — and get booking requests from your neighbourhood.</span></p>
+  <a class="btn" href="{% url 'provider_register' %}">Join {{ brand_name }}</a>
 </div>
 {% endblock %}

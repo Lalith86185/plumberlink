@@ -1,7 +1,7 @@
 {% extends "core/base.html" %}
-{% block title %}Provider login{% endblock %}
+{% block title %}Professional login{% endblock %}
 {% block content %}
-<h1>Provider login</h1>
+<h1>Professional login</h1>
 <div class="card">
 <form method="post">
   {% csrf_token %}
@@ -11,6 +11,6 @@
   {% if form.non_field_errors %}<div class="errorlist">{{ form.non_field_errors }}</div>{% endif %}
   <button class="btn btn-block" type="submit">Log in</button>
 </form>
-<p class="muted small">New here? <a href="{% url 'provider_register' %}">Register as a plumber</a>.</p>
+<p class="muted small">New here? <a href="{% url 'provider_register' %}">Join as a professional</a>.</p>
 </div>
 {% endblock %}

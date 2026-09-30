@@ -1,4 +1,4 @@
-"""Regenerate every QR image (use after changing PLUMBERLINK_PUBLIC_URL)."""
+"""Regenerate every QR image (use after changing PUBLIC_BASE_URL)."""
 from django.core.management.base import BaseCommand
 
 from core.models import QRCode

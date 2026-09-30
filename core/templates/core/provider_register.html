@@ -1,19 +1,38 @@
 {% extends "core/base.html" %}
-{% block title %}Join as a plumber{% endblock %}
+{% block title %}Join {{ brand_name }} as a Professional{% endblock %}
 {% block content %}
-<h1>Join {{ brand_name }} as a plumber</h1>
-<p class="muted">Free to register. Your profile goes live after a quick verification by our team.</p>
+<h1>Join {{ brand_name }} as a Professional</h1>
+<p class="muted">Free to register. Get booking requests from customers in your neighbourhood. Your profile goes live after a quick verification by our team.</p>
 <div class="card">
 <form method="post">
   {% csrf_token %}
   {% for f in form %}
+    {% if f.name == "services" %}{# rendered grouped below #}{% else %}
   <div class="field">
     {{ f.label_tag }}
-    {% if f.name == "areas" or f.name == "services" %}<ul class="checklist">{% for c in f %}<li>{{ c }}</li>{% endfor %}</ul>
+    {% if f.name == "areas" %}<ul class="checklist">{% for c in f %}<li>{{ c }}</li>{% endfor %}</ul>
+    {% elif f.name == "categories" %}
+      <div class="cat-checks">{% for c in f %}<label class="cat-check">{{ c.tag }}<span>{{ c.choice_label }}</span></label>{% endfor %}</div>
     {% else %}{{ f }}{% endif %}
     {% if f.help_text %}<div class="helptext">{{ f.help_text }}</div>{% endif %}{{ f.errors }}
   </div>
+    {% endif %}
   {% endfor %}
+
+  <div class="field">
+    <label>Services you offer</label>
+    <div class="helptext">Tick the services you do, under each of your chosen trades.</div>
+    {% for cat, services in service_groups %}
+      <h4 style="margin:12px 0 4px">{{ cat.icon }} {{ cat.name }}</h4>
+      <ul class="checklist">
+        {% for s in services %}
+        <li><label><input type="checkbox" name="services" value="{{ s.id }}" {% if s.id|stringformat:"s" in selected_services %}checked{% endif %}> {{ s.name }}</label></li>
+        {% endfor %}
+      </ul>
+    {% endfor %}
+    {{ form.services.errors }}
+  </div>
+
   <button class="btn btn-block" type="submit">Register</button>
 </form>
 <p class="muted small">Already registered? <a href="{% url 'provider_login' %}">Log in</a>.</p>

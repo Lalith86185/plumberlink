@@ -2,9 +2,19 @@ from django.contrib import admin
 from django.utils.html import format_html
 
 from .models import (
-    Booking, Earning, Locality, PlatformSettings, ProviderProfile,
+    Booking, CustomerProfile, Earning, Locality, PlatformSettings, ProviderProfile,
     ProviderService, QRCode, Review, Service, ServiceCategory,
 )
+
+
+@admin.register(CustomerProfile)
+class CustomerProfileAdmin(admin.ModelAdmin):
+    list_display = ("user", "phone", "booking_count", "created_at")
+    search_fields = ("user__username", "user__first_name", "phone")
+
+    def booking_count(self, obj):
+        return obj.user.customer_bookings.count()
+    booking_count.short_description = "Bookings"
 
 
 @admin.register(Locality)
@@ -20,7 +30,7 @@ class LocalityAdmin(admin.ModelAdmin):
 
 @admin.register(ServiceCategory)
 class ServiceCategoryAdmin(admin.ModelAdmin):
-    list_display = ("name", "active", "sort_order")
+    list_display = ("icon", "name", "active", "sort_order")
     list_editable = ("active", "sort_order")
     prepopulated_fields = {"slug": ("name",)}
 

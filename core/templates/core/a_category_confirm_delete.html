@@ -1,0 +1,12 @@
+{% extends "core/a_base.html" %}
+{% block acontent %}
+<h1>Delete category</h1>
+<div class="card">
+  <p>Delete <strong>{{ category.icon }} {{ category.name }}</strong> and all its services? Professionals offering those services will lose those listings.</p>
+  <form method="post">
+    {% csrf_token %}
+    <button class="btn btn-danger" type="submit">Yes, delete it</button>
+    <a class="btn btn-ghost" href="{% url 'admin_category_edit' category.id %}">Cancel</a>
+  </form>
+</div>
+{% endblock %}

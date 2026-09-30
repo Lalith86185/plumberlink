@@ -1,0 +1,26 @@
+{% extends "core/a_base.html" %}
+{% block acontent %}
+<h1>{% if category %}Edit {{ category.name }}{% else %}New service category{% endif %}</h1>
+<div class="card">
+<form method="post">
+  {% csrf_token %}
+  {% for f in form %}
+  <div class="field">{{ f.label_tag }}{{ f }}{% if f.help_text %}<div class="helptext">{{ f.help_text }}</div>{% endif %}{{ f.errors }}</div>
+  {% endfor %}
+  <button class="btn" type="submit">Save category</button>
+  <a class="btn btn-ghost" href="{% url 'admin_categories' %}">Cancel</a>
+</form>
+</div>
+{% if category %}
+<div class="card">
+  <h3>Services in this category ({{ services|length }})</h3>
+  <p class="muted small">Manage individual services from <a href="/django-admin/core/service/">Django admin → Services</a>.</p>
+  <table class="tbl">
+    {% for s in services %}
+    <tr><td>{{ s.name }}</td><td class="muted small">{{ s.short_description }}</td><td>{% if s.active %}✅{% else %}⏸️{% endif %}</td></tr>
+    {% empty %}<tr><td colspan="3" class="muted">No services yet — add them from Django admin.</td></tr>{% endfor %}
+  </table>
+  <p style="margin-top:16px"><a class="btn btn-sm btn-danger" href="{% url 'admin_category_delete' category.id %}">Delete category</a></p>
+</div>
+{% endif %}
+{% endblock %}

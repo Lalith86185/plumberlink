@@ -3,8 +3,10 @@
 {% block acontent %}
 <h1>Platform overview</h1>
 <div class="kpis">
-  <div class="kpi"><div class="n">{{ listed }}</div><div class="l">Listed plumbers</div></div>
+  <div class="kpi"><div class="n">{{ listed }}</div><div class="l">Listed professionals</div></div>
   <div class="kpi"><div class="n">{{ pending }}</div><div class="l">Awaiting approval</div></div>
+  <div class="kpi"><div class="n">{{ customers_total }}</div><div class="l">Customers</div></div>
+  <div class="kpi"><div class="n">{{ categories_total }}</div><div class="l">Service categories</div></div>
   <div class="kpi"><div class="n">{{ bookings_total }}</div><div class="l">Bookings</div></div>
   <div class="kpi"><div class="n">₹{{ earnings_total }}</div><div class="l">Platform revenue</div></div>
   <div class="kpi"><div class="n">{{ qr_scans }}</div><div class="l">QR scans ({{ qr_count }} codes)</div></div>
@@ -20,7 +22,7 @@
 </div>
 
 <div class="card">
-  <h3>Providers awaiting approval ({{ pending }})</h3>
+  <h3>Professionals awaiting approval ({{ pending }})</h3>
   {% for p in pending_providers %}
   <p><strong>{{ p.display_name }}</strong> · {{ p.phone }} · {{ p.areas.all|join:", " }}
      <a class="btn btn-sm" href="{% url 'admin_providers' %}?tab=pending">Review</a></p>

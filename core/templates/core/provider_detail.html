@@ -4,9 +4,11 @@
 <div class="card">
   <div class="pro-card">
     {% if provider.photo %}<img class="avatar avatar-lg" src="{{ provider.photo.url }}" alt="{{ provider.display_name }}">
-    {% else %}<div class="avatar avatar-lg">👨‍🔧</div>{% endif %}
+    {% else %}<div class="avatar avatar-lg">{% if provider.primary_category %}{{ provider.primary_category.icon }}{% else %}👷{% endif %}</div>{% endif %}
     <div>
       <h1 style="margin:0 0 4px">{{ provider.display_name }}</h1>
+      {% if provider.business_name %}<p class="muted" style="margin:0 0 4px">{{ provider.business_name }}</p>{% endif %}
+      <p style="margin:6px 0">{% for c in provider.categories %}<span class="badge">{{ c.icon }} {{ c.name }}</span> {% endfor %}</p>
       {% if provider.is_demo %}<span class="badge badge-demo">DEMO PROFILE</span>{% endif %}
       {% if provider.is_featured %}<span class="badge badge-featured">★ Featured</span>{% endif %}
       {% if provider.emergency_available %}<span class="badge badge-emergency">🚨 Emergency available</span>{% endif %}
@@ -17,25 +19,28 @@
   </div>
   <div class="actions-row">
     <a class="btn call-btn" href="tel:{{ provider.phone }}">📞 Call {{ provider.phone }}</a>
-    <a class="btn" href="{% url 'booking_create' provider.id %}">Request booking</a>
+    <a class="btn" href="{% url 'booking_create' provider.id %}">Request Booking</a>
   </div>
 </div>
 
 <div class="card">
   <h3>Services & starting prices</h3>
-  {% if provider.offered_services.all %}
-  <table class="tbl">
-    {% for ps in provider.offered_services.all %}
-    <tr><td>{{ ps.service.name }}</td>
-      <td class="price">{% if ps.price_from %}₹{{ ps.price_from }} onwards{% else %}Price on inspection{% endif %}</td></tr>
+  {% if services_by_category %}
+    {% for cat, offered in services_by_category %}
+      <h4 style="margin:14px 0 6px">{{ cat.icon }} {{ cat.name }}</h4>
+      <table class="tbl">
+        {% for ps in offered %}
+        <tr><td>{{ ps.service.name }}</td>
+          <td class="price">{% if ps.price_from %}₹{{ ps.price_from }} onwards{% else %}Price on inspection{% endif %}</td></tr>
+        {% endfor %}
+      </table>
     {% endfor %}
-  </table>
   {% else %}<p class="muted">Service list not added yet — call to discuss your requirement.</p>{% endif %}
 </div>
 
 <div class="card">
   <h3>Service areas</h3>
-  <p>{{ provider.areas.all|join:", " }}</p>
+  <p>{{ provider.areas.all|join:" · " }}</p>
   <h3>Working hours</h3>
   <p>{{ provider.work_days }} · {{ provider.work_start|time:"g:i A" }} – {{ provider.work_end|time:"g:i A" }}</p>
 </div>

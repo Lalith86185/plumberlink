@@ -1,0 +1,21 @@
+{% extends "core/a_base.html" %}
+{% block acontent %}
+<h1>Service categories</h1>
+<p><a class="btn btn-sm" href="{% url 'admin_category_new' %}">➕ New category</a></p>
+<p class="muted small">The whole site — homepage cards, search, listings, profiles, booking and QR landing — is driven by this list. Add a trade here and it goes live everywhere.</p>
+<div class="card">
+<table class="tbl">
+  <tr><th></th><th>Name</th><th>Services</th><th>Professionals</th><th>Active</th><th></th></tr>
+  {% for c in categories %}
+  <tr>
+    <td style="font-size:1.4em">{{ c.icon }}</td>
+    <td><strong>{{ c.name }}</strong><br><span class="muted small">{{ c.description|default:c.tagline }}</span></td>
+    <td>{{ c.n_services }}</td>
+    <td>{{ c.n_providers }}</td>
+    <td>{% if c.active %}✅{% else %}⏸️{% endif %}</td>
+    <td><a class="btn btn-sm" href="{% url 'admin_category_edit' c.id %}">Edit</a></td>
+  </tr>
+  {% empty %}<tr><td colspan="6" class="muted">No categories yet.</td></tr>{% endfor %}
+</table>
+</div>
+{% endblock %}

@@ -1,0 +1,16 @@
+{% extends "core/base.html" %}
+{% block title %}Create your account — {{ brand_name }}{% endblock %}
+{% block content %}
+<h1>Create your account</h1>
+<p class="muted">Track bookings, rebook favourite professionals and manage your reviews — all in one place.</p>
+<div class="card">
+<form method="post">
+  {% csrf_token %}
+  {% for f in form %}
+  <div class="field">{{ f.label_tag }}{{ f }}{% if f.help_text %}<div class="helptext">{{ f.help_text }}</div>{% endif %}{{ f.errors }}</div>
+  {% endfor %}
+  <button class="btn btn-block" type="submit">Create account</button>
+</form>
+<p class="muted small">Already have an account? <a href="{% url 'customer_login' %}">Log in</a>.</p>
+</div>
+{% endblock %}

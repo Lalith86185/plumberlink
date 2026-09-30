@@ -1,10 +1,12 @@
 """
-PlumberLink data model.
+NammaWork data model — a multi-service local marketplace for Bengaluru.
 
 Roles are derived from the linked records, not a role column:
   - staff / superuser  -> platform admin (Django admin + /admin-panel/)
-  - has ProviderProfile -> service provider
-  - everyone else      -> customer (guests book with name + phone; no account needed)
+  - has ProviderProfile -> service professional (any category: plumber,
+    electrician, carpenter, ...)
+  - has CustomerProfile -> registered customer (booking history, rebook, reviews)
+  - everyone else      -> guest (books with name + phone; no account needed)
 """
 import secrets
 
@@ -13,7 +15,7 @@ from django.db import models
 from django.utils.text import slugify
 
 
-def _ref_code(prefix: str = "PLB") -> str:
+def _ref_code(prefix: str = "NMW") -> str:
     alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"  # no confusing chars
     return f"{prefix}-{''.join(secrets.choice(alphabet) for _ in range(6))}"
 
@@ -48,11 +50,15 @@ class Locality(models.Model):
 
 
 class ServiceCategory(models.Model):
-    """Top-level trade: Plumber now; Electrician etc. later (active=False = 'coming soon')."""
+    """Top-level trade: Plumber, Electrician, Carpenter, ... Admin can add more
+    any time — listings, profiles, booking and search all key off this table."""
 
     name = models.CharField(max_length=100, unique=True)
     slug = models.SlugField(max_length=100, unique=True, blank=True)
+    icon = models.CharField(max_length=8, default="🔧", help_text="Emoji shown on the category card")
     tagline = models.CharField(max_length=200, blank=True)
+    description = models.CharField(max_length=255, blank=True,
+                                   help_text="One-line description for the homepage card")
     active = models.BooleanField(default=True)
     sort_order = models.IntegerField(default=0)
 
@@ -92,10 +98,16 @@ class Service(models.Model):
 
 
 class ProviderProfile(models.Model):
-    """A plumber's public profile. Only listed when approved AND available."""
+    """A professional's public profile (any trade). Only listed when approved AND available.
+
+    Categories are derived from the services the professional offers —
+    no separate category list to keep in sync.
+    """
 
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="provider_profile")
     display_name = models.CharField(max_length=120, help_text="Name shown to customers")
+    business_name = models.CharField(max_length=120, blank=True,
+                                     help_text="Optional business / shop name")
     phone = models.CharField(max_length=20, help_text="Customer-facing phone number")
     photo = models.ImageField(upload_to="providers/", blank=True, null=True)
     bio = models.TextField(blank=True)
@@ -125,6 +137,8 @@ class ProviderProfile(models.Model):
 
     class Meta:
         ordering = ["-is_featured", "-rating_avg", "display_name"]
+        verbose_name = "professional"
+        verbose_name_plural = "professionals"
 
     def __str__(self):
         return self.display_name
@@ -132,6 +146,18 @@ class ProviderProfile(models.Model):
     @property
     def is_listed(self) -> bool:
         return self.is_approved and self.is_available
+
+    @property
+    def categories(self):
+        """ServiceCategories this professional offers, derived from their services."""
+        cat_ids = (self.offered_services
+                       .values_list("service__category_id", flat=True).distinct())
+        return ServiceCategory.objects.filter(pk__in=cat_ids).order_by("sort_order", "name")
+
+    @property
+    def primary_category(self):
+        """First category (by sort order) — used for the listing icon."""
+        return self.categories.first()
 
     def refresh_rating(self):
         from django.db.models import Avg, Count
@@ -162,19 +188,29 @@ class ProviderService(models.Model):
 class Booking(models.Model):
     STATUS_REQUESTED = "requested"
     STATUS_ACCEPTED = "accepted"
+    STATUS_ON_THE_WAY = "on_the_way"
+    STATUS_IN_PROGRESS = "in_progress"
     STATUS_REJECTED = "rejected"
     STATUS_COMPLETED = "completed"
     STATUS_CANCELLED = "cancelled"
     STATUS_CHOICES = [
         (STATUS_REQUESTED, "Requested"),
         (STATUS_ACCEPTED, "Accepted"),
+        (STATUS_ON_THE_WAY, "On the way"),
+        (STATUS_IN_PROGRESS, "Service started"),
         (STATUS_REJECTED, "Rejected"),
         (STATUS_COMPLETED, "Completed"),
         (STATUS_CANCELLED, "Cancelled"),
     ]
+    # Linear happy-path shown to customers as a timeline.
+    STATUS_FLOW = [STATUS_REQUESTED, STATUS_ACCEPTED, STATUS_ON_THE_WAY,
+                   STATUS_IN_PROGRESS, STATUS_COMPLETED]
 
     ref_code = models.CharField(max_length=16, unique=True, default=_default_ref_code)
     provider = models.ForeignKey(ProviderProfile, on_delete=models.CASCADE, related_name="bookings")
+    customer = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True,
+                                 related_name="customer_bookings",
+                                 help_text="Linked when the customer books from their account")
     customer_name = models.CharField(max_length=120)
     customer_phone = models.CharField(max_length=20)
     service = models.ForeignKey(Service, on_delete=models.SET_NULL, null=True, blank=True)
@@ -209,6 +245,18 @@ class Booking(models.Model):
         if not self.review_token:
             self.review_token = secrets.token_urlsafe(16)[:32]
         super().save(*args, **kwargs)
+
+
+class CustomerProfile(models.Model):
+    """A registered customer: booking history, tracking, rebooking, reviews."""
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="customer_profile")
+    phone = models.CharField(max_length=20, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        name = self.user.get_full_name() or self.user.username
+        return f"{name} ({self.phone})"
 
 
 class Review(models.Model):
@@ -257,7 +305,7 @@ class QRCode(models.Model):
     slug = models.SlugField(max_length=80, unique=True, blank=True)
     venue_type = models.CharField(max_length=20, choices=VENUE_CHOICES, default=VENUE_OTHER)
     locality = models.ForeignKey(Locality, on_delete=models.SET_NULL, null=True, blank=True,
-                                 help_text="Optional: QR opens the plumber list pre-filtered to this locality")
+                                 help_text="Optional: QR landing page pre-selects this locality")
     service_category = models.ForeignKey(ServiceCategory, on_delete=models.SET_NULL, null=True, blank=True)
     notes = models.TextField(blank=True)
     image = models.ImageField(upload_to="qr/", blank=True, null=True, help_text="Generated QR PNG")

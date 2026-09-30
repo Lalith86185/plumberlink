@@ -4,7 +4,9 @@
 <div class="layout">
   <nav class="sidenav">
     <a href="{% url 'admin_dashboard' %}" class="{% if request.resolver_match.url_name == 'admin_dashboard' %}on{% endif %}">📊 Overview</a>
-    <a href="{% url 'admin_providers' %}" class="{% if request.resolver_match.url_name == 'admin_providers' %}on{% endif %}">👨‍🔧 Providers</a>
+    <a href="{% url 'admin_categories' %}" class="{% if 'categor' in request.resolver_match.url_name %}on{% endif %}">🗂️ Services</a>
+    <a href="{% url 'admin_providers' %}" class="{% if request.resolver_match.url_name == 'admin_providers' %}on{% endif %}">👷 Professionals</a>
+    <a href="{% url 'admin_customers' %}" class="{% if request.resolver_match.url_name == 'admin_customers' %}on{% endif %}">🧑 Customers</a>
     <a href="{% url 'admin_bookings' %}" class="{% if request.resolver_match.url_name == 'admin_bookings' %}on{% endif %}">📅 Bookings</a>
     <a href="{% url 'admin_reviews' %}" class="{% if request.resolver_match.url_name == 'admin_reviews' %}on{% endif %}">⭐ Reviews</a>
     <a href="{% url 'admin_qr_list' %}" class="{% if 'qr' in request.resolver_match.url_name %}on{% endif %}">🔳 QR codes</a>

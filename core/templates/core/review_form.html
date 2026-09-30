@@ -2,7 +2,7 @@
 {% block title %}Rate your service{% endblock %}
 {% block content %}
 <h1>Rate your service</h1>
-<p class="muted">Booking {{ booking.ref_code }} · {{ booking.provider.display_name }} · {{ booking.service|default:"Plumbing work" }}</p>
+<p class="muted">Booking {{ booking.ref_code }} · {{ booking.provider.display_name }} · {{ booking.service|default:"General work" }}</p>
 <div class="card">
 <form method="post">
   {% csrf_token %}

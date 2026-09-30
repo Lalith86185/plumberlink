@@ -8,7 +8,7 @@
     <a href="{% url 'provider_profile' %}" class="{% if request.resolver_match.url_name == 'provider_profile' %}on{% endif %}">👤 My profile</a>
     <a href="{% url 'provider_reviews' %}" class="{% if request.resolver_match.url_name == 'provider_reviews' %}on{% endif %}">⭐ Reviews</a>
     <a href="{% url 'provider_earnings' %}" class="{% if request.resolver_match.url_name == 'provider_earnings' %}on{% endif %}">💰 Earnings & leads</a>
-    <a href="{% url 'provider_detail' profile.id %}">👁️ View public profile</a>
+    <a href="{% url 'professional_detail' profile.id %}">👁️ View public profile</a>
   </nav>
   <div>{% block pcontent %}{% endblock %}</div>
 </div>

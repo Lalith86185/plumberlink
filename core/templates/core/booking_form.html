@@ -2,15 +2,15 @@
 {% block title %}Request booking — {{ provider.display_name }}{% endblock %}
 {% block content %}
 <h1>Request a booking</h1>
-<p class="muted">With <strong>{{ provider.display_name }}</strong> · <a href="tel:{{ provider.phone }}">📞 {{ provider.phone }}</a></p>
+<p class="muted">With <strong>{{ provider.display_name }}</strong>{% if provider.business_name %} ({{ provider.business_name }}){% endif %} · {% for c in provider.categories %}{{ c.icon }} {{ c.name }}{% if not forloop.last %}, {% endif %}{% endfor %} · <a href="tel:{{ provider.phone }}">📞 {{ provider.phone }}</a></p>
 <div class="card">
 <form method="post">
   {% csrf_token %}
   {% for f in form %}
   <div class="field">{{ f.label_tag }}{{ f }}{% if f.help_text %}<div class="helptext">{{ f.help_text }}</div>{% endif %}{{ f.errors }}</div>
   {% endfor %}
-  <button class="btn btn-block" type="submit">Send booking request</button>
+  <button class="btn btn-block" type="submit">Request Booking</button>
 </form>
-<p class="muted small">No account needed. The plumber will confirm by phone. Your exact address is never shown publicly.</p>
+<p class="muted small">No account needed — or <a href="{% url 'customer_login' %}">log in</a> to track all your bookings in one place. The professional will confirm by phone. Your exact address is never shown publicly.</p>
 </div>
 {% endblock %}

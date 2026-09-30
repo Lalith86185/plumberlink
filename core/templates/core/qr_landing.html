@@ -1,0 +1,28 @@
+{% extends "core/base.html" %}
+{% block title %}Need help at home? — {{ brand_name }}{% endblock %}
+{% block content %}
+<div class="hero">
+  <h1>Need help at home?</h1>
+  <p class="hero-sub">Scan to find local professionals</p>
+  {% if qr.locality %}<p>📍 Showing professionals near <strong>{{ qr.locality.name }}</strong></p>{% endif %}
+  <form class="searchbar" method="get" action="{% url 'professional_list' %}">
+    {% if qr.locality %}<input type="hidden" name="locality" value="{{ qr.locality.slug }}">{% endif %}
+    <select name="category" required aria-label="What service do you need?">
+      <option value="">🔧 What service do you need? …</option>
+      {% for c in categories %}<option value="{{ c.slug }}" {% if qr.service_category_id and c.id == qr.service_category_id %}selected{% endif %}>{{ c.icon }} {{ c.name }}</option>{% endfor %}
+    </select>
+    <button class="btn btn-sm" style="padding:12px 22px" type="submit">Find Professionals</button>
+  </form>
+</div>
+
+<h2>All services</h2>
+<div class="grid">
+  {% for c in categories %}
+  <a class="card pro-card" style="text-decoration:none;color:inherit" href="{% url 'professional_list' %}?category={{ c.slug }}{% if qr.locality %}&locality={{ qr.locality.slug }}{% endif %}">
+    <div class="avatar">{{ c.icon }}</div>
+    <div><strong>{{ c.name }}</strong><br><span class="muted small">{{ c.description|default:c.tagline }}</span></div>
+  </a>
+  {% endfor %}
+</div>
+<p class="muted small" style="text-align:center">{{ brand_name }} · {{ qr.name }}</p>
+{% endblock %}
