@@ -1,0 +1,50 @@
+{% extends "core/base.html" %}
+{% block title %}{{ provider.display_name }} — {{ brand_name }}{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="pro-card">
+    {% if provider.photo %}<img class="avatar avatar-lg" src="{{ provider.photo.url }}" alt="{{ provider.display_name }}">
+    {% else %}<div class="avatar avatar-lg">👨‍🔧</div>{% endif %}
+    <div>
+      <h1 style="margin:0 0 4px">{{ provider.display_name }}</h1>
+      {% if provider.is_demo %}<span class="badge badge-demo">DEMO PROFILE</span>{% endif %}
+      {% if provider.is_featured %}<span class="badge badge-featured">★ Featured</span>{% endif %}
+      {% if provider.emergency_available %}<span class="badge badge-emergency">🚨 Emergency available</span>{% endif %}
+      <p class="stars" style="margin:6px 0">{% if provider.rating_count %}★ {{ provider.rating_avg }} · {{ provider.rating_count }} review{{ provider.rating_count|pluralize }}{% else %}New on {{ brand_name }} — no reviews yet{% endif %}</p>
+      <p class="muted" style="margin:4px 0">{{ provider.experience_years }} years experience</p>
+      {% if provider.bio %}<p>{{ provider.bio }}</p>{% endif %}
+    </div>
+  </div>
+  <div class="actions-row">
+    <a class="btn call-btn" href="tel:{{ provider.phone }}">📞 Call {{ provider.phone }}</a>
+    <a class="btn" href="{% url 'booking_create' provider.id %}">Request booking</a>
+  </div>
+</div>
+
+<div class="card">
+  <h3>Services & starting prices</h3>
+  {% if provider.offered_services.all %}
+  <table class="tbl">
+    {% for ps in provider.offered_services.all %}
+    <tr><td>{{ ps.service.name }}</td>
+      <td class="price">{% if ps.price_from %}₹{{ ps.price_from }} onwards{% else %}Price on inspection{% endif %}</td></tr>
+    {% endfor %}
+  </table>
+  {% else %}<p class="muted">Service list not added yet — call to discuss your requirement.</p>{% endif %}
+</div>
+
+<div class="card">
+  <h3>Service areas</h3>
+  <p>{{ provider.areas.all|join:", " }}</p>
+  <h3>Working hours</h3>
+  <p>{{ provider.work_days }} · {{ provider.work_start|time:"g:i A" }} – {{ provider.work_end|time:"g:i A" }}</p>
+</div>
+
+<div class="card">
+  <h3>Reviews ({{ provider.rating_count }})</h3>
+  {% for r in reviews %}
+    <p><span class="stars">{{ r.rating }}★</span> <strong>{{ r.customer_name }}</strong>
+      <span class="muted small">{{ r.created_at|date:"M Y" }}</span><br>{{ r.comment }}</p>
+  {% empty %}<p class="muted">No reviews yet.</p>{% endfor %}
+</div>
+{% endblock %}

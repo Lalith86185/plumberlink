@@ -1,0 +1,6 @@
+[2026-09-30 12:42:55 +0000] [15011] [INFO] Starting gunicorn 26.2.0
+[2026-09-30 12:42:55 +0000] [15011] [INFO] Listening at: http://127.0.0.1:8000 (15011)
+[2026-09-30 12:42:55 +0000] [15011] [INFO] Using worker: sync
+[2026-09-30 12:42:55 +0000] [15012] [INFO] Booting worker with pid: 15012
+[2026-09-30 12:42:55 +0000] [15013] [INFO] Booting worker with pid: 15013
+[2026-09-30 12:42:55 +0000] [15011] [INFO] Control socket listening at /home/hatch/.gunicorn/gunicorn.ctl

@@ -1,0 +1,48 @@
+{% extends "core/base.html" %}
+{% block title %}Plumbers{% if locality %} in {{ locality.name }}{% endif %} — {{ brand_name }}{% endblock %}
+{% block content %}
+<h1>Plumbers{% if locality %} in {{ locality.name }}{% endif %}</h1>
+
+<form class="card" method="get" style="display:flex;gap:8px;flex-wrap:wrap;align-items:end">
+  <div class="field" style="margin:0;min-width:170px">
+    <label>Locality</label>
+    <select name="locality" onchange="this.form.submit()">
+      <option value="">All Bengaluru</option>
+      {% for l in localities %}<option value="{{ l.slug }}" {% if locality and l.slug == locality.slug %}selected{% endif %}>{{ l.name }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="field" style="margin:0;min-width:170px">
+    <label>Service</label>
+    <select name="service" onchange="this.form.submit()">
+      <option value="">Any plumbing work</option>
+      {% for s in services %}<option value="{{ s.id }}" {% if service and s.id == service.id %}selected{% endif %}>{{ s.name }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="field" style="margin:0">
+    <label><input type="checkbox" name="emergency" value="1" {% if emergency %}checked{% endif %} onchange="this.form.submit()"> Emergency only</label>
+  </div>
+  <noscript><button class="btn" type="submit">Filter</button></noscript>
+</form>
+
+{% if providers %}
+<div class="grid">
+  {% for p in providers %}
+  <a class="card pro-card" style="text-decoration:none;color:inherit" href="{% url 'provider_detail' p.id %}">
+    {% if p.photo %}<img class="avatar" src="{{ p.photo.url }}" alt="{{ p.display_name }}">
+    {% else %}<div class="avatar">👨‍🔧</div>{% endif %}
+    <div>
+      <strong>{{ p.display_name }}</strong>
+      {% if p.is_demo %}<span class="badge badge-demo">DEMO</span>{% endif %}
+      {% if p.is_featured %}<span class="badge badge-featured">★ Featured</span>{% endif %}
+      {% if p.emergency_available %}<span class="badge badge-emergency">🚨 Emergency</span>{% endif %}
+      <br>
+      <span class="stars">{% if p.rating_count %}★ {{ p.rating_avg }} ({{ p.rating_count }}){% else %}New — no reviews yet{% endif %}</span><br>
+      <span class="muted small">{{ p.experience_years }} yrs exp · {{ p.areas.all|join:", " }}</span>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card"><p>No plumbers listed for this search yet. Try another locality, or <a href="{% url 'home' %}">go back</a>.</p></div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends "core/p_base.html" %}
+{% block pcontent %}
+<h1>Earnings & platform charges</h1>
+<div class="card">
+  <p class="muted">Revenue model: <strong>{{ cfg.get_revenue_model_display }}</strong></p>
+  <div class="kpis">
+    <div class="kpi"><div class="n">₹{{ total }}</div><div class="l">Total platform charges</div></div>
+  </div>
+  {% if cfg.revenue_model == "lead_fee" %}
+  <p class="small">You are charged <strong>₹{{ cfg.lead_fee_amount }}</strong> for every booking lead you accept. Rejecting a request costs nothing.</p>
+  {% elif cfg.revenue_model == "commission" %}
+  <p class="small">You are charged <strong>{{ cfg.commission_percent }}%</strong> of the final amount on completed jobs.</p>
+  {% else %}
+  <p class="small">Premium listing subscription: <strong>₹{{ cfg.subscription_monthly }}/month</strong>.</p>
+  {% endif %}
+</div>
+<div class="card">
+  <h3>Charge history</h3>
+  <table class="tbl">
+    <tr><th>Date</th><th>Type</th><th>Amount</th><th>Note</th></tr>
+    {% for c in charges %}
+    <tr><td>{{ c.created_at|date:"d M Y" }}</td><td>{{ c.get_kind_display }}</td><td>₹{{ c.amount }}</td><td class="muted small">{{ c.note }}</td></tr>
+    {% empty %}<tr><td colspan="4" class="muted">No charges yet.</td></tr>{% endfor %}
+  </table>
+</div>
+{% endblock %}

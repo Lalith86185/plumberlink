@@ -1,0 +1,16 @@
+{% extends "core/base.html" %}
+{% block title %}Request booking — {{ provider.display_name }}{% endblock %}
+{% block content %}
+<h1>Request a booking</h1>
+<p class="muted">With <strong>{{ provider.display_name }}</strong> · <a href="tel:{{ provider.phone }}">📞 {{ provider.phone }}</a></p>
+<div class="card">
+<form method="post">
+  {% csrf_token %}
+  {% for f in form %}
+  <div class="field">{{ f.label_tag }}{{ f }}{% if f.help_text %}<div class="helptext">{{ f.help_text }}</div>{% endif %}{{ f.errors }}</div>
+  {% endfor %}
+  <button class="btn btn-block" type="submit">Send booking request</button>
+</form>
+<p class="muted small">No account needed. The plumber will confirm by phone. Your exact address is never shown publicly.</p>
+</div>
+{% endblock %}

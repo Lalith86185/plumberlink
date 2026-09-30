@@ -1,0 +1,37 @@
+{% extends "core/p_base.html" %}
+{% block pcontent %}
+<h1>Bookings</h1>
+<div class="tabs">
+  <a href="{% url 'provider_bookings' %}" class="{% if not active_status %}on{% endif %}">All</a>
+  {% for v,l in status_choices %}<a href="?status={{ v }}" class="{% if active_status == v %}on{% endif %}">{{ l }}</a>{% endfor %}
+</div>
+{% for b in bookings %}
+<div class="card">
+  <p><strong>{{ b.ref_code }}</strong> <span class="status st-{{ b.status }}">{{ b.get_status_display }}</span>
+     <span class="muted small">{{ b.created_at|date:"d M Y, g:i A" }}</span></p>
+  <p>👤 {{ b.customer_name }} · <a href="tel:{{ b.customer_phone }}">📞 {{ b.customer_phone }}</a><br>
+     🔧 {{ b.service|default:"General plumbing work" }} · 📍 {{ b.locality|default:"" }} {{ b.area_detail }}<br>
+     🕐 {{ b.preferred_date|date:"d M Y"|default:"ASAP" }} {{ b.preferred_time }}</p>
+  {% if b.notes %}<p class="muted small">Note: {{ b.notes }}</p>{% endif %}
+  {% if b.status == "completed" %}
+    <p class="small">⭐ Ask the customer to review you: <input type="text" readonly value="{{ review_link_base }}{% url 'review_create' b.review_token %}" onclick="this.select()" style="width:100%"></p>
+  {% endif %}
+  {% if b.status == "requested" or b.status == "accepted" %}
+  <form method="post" class="inline-form">
+    {% csrf_token %}
+    <input type="hidden" name="booking_id" value="{{ b.id }}">
+    <div class="field"><label>Note for customer (optional)</label><textarea name="provider_notes" rows="2">{{ b.provider_notes }}</textarea></div>
+    {% if b.status == "requested" %}
+      <div class="actions-row no-print">
+        <button class="btn btn-ok" name="action" value="accept" type="submit">✅ Accept</button>
+        <button class="btn btn-danger" name="action" value="reject" type="submit">✖ Reject</button>
+      </div>
+    {% else %}
+      <div class="field"><label>Amount collected from customer ₹</label><input type="number" name="final_amount" min="0" step="0.01" placeholder="e.g. 450"></div>
+      <div class="actions-row"><button class="btn btn-ok" name="action" value="complete" type="submit">✔ Mark completed</button></div>
+    {% endif %}
+  </form>
+  {% endif %}
+</div>
+{% empty %}<div class="card"><p class="muted">No bookings here yet.</p></div>{% endfor %}
+{% endblock %}

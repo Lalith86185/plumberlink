@@ -1,0 +1,16 @@
+{% extends "core/a_base.html" %}
+{% block acontent %}
+<h1>QR codes</h1>
+<div class="actions-row"><a class="btn" href="{% url 'admin_qr_create' %}">➕ New QR code</a></div>
+{% for q in codes %}
+<div class="card pro-card">
+  {% if q.image %}<img src="{{ q.image.url }}" alt="QR {{ q.slug }}" style="width:90px;height:90px">{% else %}<div class="avatar">🔳</div>{% endif %}
+  <div>
+    <p style="margin:0"><strong><a href="{% url 'admin_qr_detail' q.slug %}">{{ q.name }}</a></strong>
+      {% if q.is_demo %}<span class="badge badge-demo">DEMO</span>{% endif %}
+      <span class="muted small">{{ q.get_venue_type_display }}{% if q.locality %} · {{ q.locality.name }}{% endif %}</span></p>
+    <p class="muted small" style="margin:4px 0">🔳 {{ q.scans }} scan{{ q.scans|pluralize }} · created {{ q.created_at|date:"d M Y" }}</p>
+  </div>
+</div>
+{% empty %}<div class="card"><p class="muted">No QR codes yet. Create one for an apartment, shop or locality.</p></div>{% endfor %}
+{% endblock %}

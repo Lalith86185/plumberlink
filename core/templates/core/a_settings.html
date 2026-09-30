@@ -1,0 +1,21 @@
+{% extends "core/a_base.html" %}
+{% block acontent %}
+<h1>Platform settings</h1>
+<div class="card">
+<form method="post">
+  {% csrf_token %}
+  {% for f in form %}
+  <div class="field">{{ f.label_tag }}{{ f }}{% if f.help_text %}<div class="helptext">{{ f.help_text }}</div>{% endif %}{{ f.errors }}</div>
+  {% endfor %}
+  <button class="btn btn-block" type="submit">Save settings</button>
+</form>
+</div>
+<div class="card">
+  <h3>How each model works</h3>
+  <ul>
+    <li><strong>Lead fee</strong> — provider is charged ₹X every time they <em>accept</em> a booking. Rejecting is free. Best for the pilot: you earn from day one.</li>
+    <li><strong>Commission</strong> — provider is charged X% of the final job amount when a booking is marked <em>completed</em>.</li>
+    <li><strong>Subscription</strong> — charge providers a flat monthly fee for a premium/featured listing (recorded manually in Django admin → Earnings for now).</li>
+  </ul>
+</div>
+{% endblock %}

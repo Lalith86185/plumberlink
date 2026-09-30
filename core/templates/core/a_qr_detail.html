@@ -1,0 +1,24 @@
+{% extends "core/a_base.html" %}
+{% block acontent %}
+<h1>{{ qr.name }}</h1>
+<div class="card">
+  <div class="qr-print">
+    <h2 style="margin-top:0">NEED A PLUMBER? 🔧</h2>
+    <p>Scan to find a nearby plumber</p>
+    {% if qr.image %}<img src="{{ qr.image.url }}" alt="QR code">{% else %}<p class="muted">Image not generated yet.</p>{% endif %}
+    <p><strong>{{ brand_name }}</strong> · {{ brand_tagline }}</p>
+    <p class="muted small">{{ target }}</p>
+  </div>
+  <div class="actions-row no-print">
+    {% if qr.image %}<a class="btn" href="{{ qr.image.url }}" download>⬇ Download PNG</a>{% endif %}
+    <button class="btn btn-ghost" onclick="window.print()">🖨 Print poster</button>
+    <form method="post" class="inline-form">{% csrf_token %}
+      <button class="btn btn-ghost" name="action" value="regen">🔄 Regenerate</button>
+    </form>
+  </div>
+  <p class="muted">Venue: {{ qr.get_venue_type_display }}{% if qr.locality %} · Locality filter: {{ qr.locality.name }}{% endif %}</p>
+  <p class="muted">Scans so far: <strong>{{ qr.scans }}</strong></p>
+  {% if qr.notes %}<p class="muted small">Notes: {{ qr.notes }}</p>{% endif %}
+  <p class="muted small">Print this page, stick it on a notice board, and customers land directly on your plumber list.</p>
+</div>
+{% endblock %}

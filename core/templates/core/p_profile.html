@@ -1,0 +1,33 @@
+{% extends "core/p_base.html" %}
+{% block pcontent %}
+<h1>My profile</h1>
+<div class="card">
+  <h3>Profile details</h3>
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {% for f in pform %}
+    <div class="field">{{ f.label_tag }}
+      {% if f.name == "areas" %}<ul class="checklist">{% for c in f %}<li>{{ c }}</li>{% endfor %}</ul>
+      {% else %}{{ f }}{% endif %}
+      {% if f.help_text %}<div class="helptext">{{ f.help_text }}</div>{% endif %}{{ f.errors }}</div>
+    {% endfor %}
+    {% if profile.photo %}<p><img src="{{ profile.photo.url }}" alt="" style="max-width:140px;border-radius:10px"></p>{% endif %}
+    <button class="btn" type="submit">Save profile</button>
+  </form>
+</div>
+<div class="card">
+  <h3>Services & pricing</h3>
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="save_services" value="1">
+    <table class="tbl">
+      <tr><th>Offer</th><th>Starting price ₹</th></tr>
+      {% for row in service_rows %}
+      <tr><td>{{ row.check }} <label>{{ row.check.label }}</label>{% if row.check.errors %}{{ row.check.errors }}{% endif %}</td>
+          <td>{{ row.price }}{% if row.price.errors %}{{ row.price.errors }}{% endif %}</td></tr>
+      {% endfor %}
+    </table>
+    <button class="btn" type="submit">Save services</button>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}{{ brand_name }} — {{ brand_tagline }}{% endblock %}</title>
+{% load static %}
+<link rel="stylesheet" href="{% static 'core/css/style.css' %}">
+</head>
+<body>
+<header class="topbar">
+  <div class="wrap topbar-in">
+    <a class="brand" href="{% url 'home' %}">🔧 {{ brand_name }}</a>
+    <nav class="topnav">
+      <a href="{% url 'provider_list' %}">Find a plumber</a>
+      <a href="{% url 'booking_track' %}">Track booking</a>
+      {% if user.is_authenticated %}
+        {% if user.is_staff %}<a href="{% url 'admin_dashboard' %}">Admin</a>{% endif %}
+        {% if user.provider_profile %}<a href="{% url 'provider_dashboard' %}">Dashboard</a>{% endif %}
+        <a href="{% url 'provider_logout' %}">Logout</a>
+      {% else %}
+        <a href="{% url 'provider_login' %}">Provider login</a>
+        <a class="btn btn-sm" href="{% url 'provider_register' %}">Join as plumber</a>
+      {% endif %}
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  {% if messages %}
+    <div class="msgs">{% for m in messages %}<div class="msg {{ m.tags }}">{{ m }}</div>{% endfor %}</div>
+  {% endif %}
+  {% block content %}{% endblock %}
+</main>
+
+<footer class="footer">
+  <div class="wrap">
+    <p><strong>{{ brand_name }}</strong> — {{ brand_tagline }}.</p>
+    <p class="muted">Pilot in Bengaluru. Customer addresses are never shown publicly.</p>
+  </div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,15 @@
+{% extends "core/base.html" %}
+{% block title %}Provider dashboard{% endblock %}
+{% block content %}
+<div class="layout">
+  <nav class="sidenav">
+    <a href="{% url 'provider_dashboard' %}" class="{% if request.resolver_match.url_name == 'provider_dashboard' %}on{% endif %}">📊 Overview</a>
+    <a href="{% url 'provider_bookings' %}" class="{% if request.resolver_match.url_name == 'provider_bookings' %}on{% endif %}">📅 Bookings</a>
+    <a href="{% url 'provider_profile' %}" class="{% if request.resolver_match.url_name == 'provider_profile' %}on{% endif %}">👤 My profile</a>
+    <a href="{% url 'provider_reviews' %}" class="{% if request.resolver_match.url_name == 'provider_reviews' %}on{% endif %}">⭐ Reviews</a>
+    <a href="{% url 'provider_earnings' %}" class="{% if request.resolver_match.url_name == 'provider_earnings' %}on{% endif %}">💰 Earnings & leads</a>
+    <a href="{% url 'provider_detail' profile.id %}">👁️ View public profile</a>
+  </nav>
+  <div>{% block pcontent %}{% endblock %}</div>
+</div>
+{% endblock %}

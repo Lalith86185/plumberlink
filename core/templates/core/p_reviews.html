@@ -1,0 +1,11 @@
+{% extends "core/p_base.html" %}
+{% block pcontent %}
+<h1>Reviews <span class="stars">★ {{ profile.rating_avg }} ({{ profile.rating_count }})</span></h1>
+{% for r in reviews %}
+<div class="card">
+  <p><span class="stars">{{ r.rating }}★</span> <strong>{{ r.customer_name }}</strong>
+     <span class="muted small">{{ r.created_at|date:"d M Y" }} · booking {{ r.booking.ref_code }}</span></p>
+  <p>{{ r.comment|default:"(no comment)" }}</p>
+</div>
+{% empty %}<div class="card"><p class="muted">No reviews yet. After each completed job, share the review link from the booking page.</p></div>{% endfor %}
+{% endblock %}

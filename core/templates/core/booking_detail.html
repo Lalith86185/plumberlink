@@ -1,0 +1,26 @@
+{% extends "core/base.html" %}
+{% block title %}Booking {{ booking.ref_code }}{% endblock %}
+{% block content %}
+<h1>Booking {{ booking.ref_code }}</h1>
+<div class="card">
+  <p><span class="status st-{{ booking.status }}">{{ booking.get_status_display }}</span></p>
+  <table class="tbl">
+    <tr><th>Plumber</th><td><a href="{% url 'provider_detail' booking.provider.id %}">{{ booking.provider.display_name }}</a> · <a href="tel:{{ booking.provider.phone }}">📞 {{ booking.provider.phone }}</a></td></tr>
+    <tr><th>Service</th><td>{{ booking.service|default:"General plumbing work" }}</td></tr>
+    <tr><th>Locality</th><td>{{ booking.locality|default:"—" }}{% if booking.area_detail %} ({{ booking.area_detail }}){% endif %}</td></tr>
+    <tr><th>Preferred slot</th><td>{{ booking.preferred_date|date:"d M Y"|default:"—" }} {{ booking.preferred_time }}</td></tr>
+    <tr><th>Requested</th><td>{{ booking.created_at|date:"d M Y, g:i A" }}</td></tr>
+    {% if booking.provider_notes %}<tr><th>Note from plumber</th><td>{{ booking.provider_notes }}</td></tr>{% endif %}
+  </table>
+  {% if booking.status == "requested" %}
+  <p class="muted">The plumber has your request and will confirm by phone shortly.</p>
+  {% elif booking.status == "accepted" %}
+  <p>✅ Accepted! The plumber will reach out to confirm the visit time.</p>
+  {% elif booking.status == "completed" %}
+  <p>✅ Service completed. {% if can_review %}<a class="btn btn-sm" href="{{ review_link }}">⭐ Rate this service</a>{% endif %}</p>
+  {% elif booking.status == "rejected" %}
+  <p class="muted">This plumber couldn't take the job. <a href="{% url 'provider_list' %}">Try another plumber</a>.</p>
+  {% endif %}
+  <p class="muted small">Save your reference <strong>{{ booking.ref_code }}</strong> — you can <a href="{% url 'booking_track' %}">track this booking</a> anytime.</p>
+</div>
+{% endblock %}

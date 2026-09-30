@@ -1,0 +1,16 @@
+{% extends "core/a_base.html" %}
+{% block acontent %}
+<h1>Reviews</h1>
+{% for r in reviews %}
+<div class="card">
+  <p><span class="stars">{{ r.rating }}★</span> <strong>{{ r.customer_name }}</strong> → {{ r.provider.display_name }}
+     {% if r.is_demo %}<span class="badge badge-demo">DEMO</span>{% endif %}
+     <span class="muted small">{{ r.created_at|date:"d M Y" }}</span></p>
+  <p>{{ r.comment|default:"(no comment)" }}</p>
+  <form method="post" class="inline-form">{% csrf_token %}
+    <input type="hidden" name="review_id" value="{{ r.id }}">
+    <button class="btn btn-danger btn-sm" name="action" value="delete" onclick="return confirm('Remove this review?')">🗑 Remove (spam/fake)</button>
+  </form>
+</div>
+{% empty %}<div class="card"><p class="muted">No reviews yet.</p></div>{% endfor %}
+{% endblock %}

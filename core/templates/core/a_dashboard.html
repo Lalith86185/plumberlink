@@ -1,0 +1,40 @@
+{% extends "core/a_base.html" %}
+{% load core_extras %}
+{% block acontent %}
+<h1>Platform overview</h1>
+<div class="kpis">
+  <div class="kpi"><div class="n">{{ listed }}</div><div class="l">Listed plumbers</div></div>
+  <div class="kpi"><div class="n">{{ pending }}</div><div class="l">Awaiting approval</div></div>
+  <div class="kpi"><div class="n">{{ bookings_total }}</div><div class="l">Bookings</div></div>
+  <div class="kpi"><div class="n">₹{{ earnings_total }}</div><div class="l">Platform revenue</div></div>
+  <div class="kpi"><div class="n">{{ qr_scans }}</div><div class="l">QR scans ({{ qr_count }} codes)</div></div>
+  <div class="kpi"><div class="n">★ {{ avg_rating }}</div><div class="l">{{ reviews_total }} reviews</div></div>
+</div>
+
+<div class="card">
+  <h3>Bookings by status</h3>
+  <p>{% for v,l in status_choices %}<span class="tag">{{ l }}: <strong>{{ by_status|get_item:v|default:0 }}</strong></span>{% endfor %}</p>
+  <h3>Revenue by type</h3>
+  <p>{% for k in by_kind %}<span class="tag">{{ k.kind }}: <strong>{{ k.n }}</strong> → ₹{{ k.t }}</span>{% empty %}<span class="muted">No revenue yet.</span>{% endfor %}</p>
+  <p class="muted small">Revenue model: <strong>{{ cfg.get_revenue_model_display }}</strong> · <a href="{% url 'admin_settings' %}">change</a></p>
+</div>
+
+<div class="card">
+  <h3>Providers awaiting approval ({{ pending }})</h3>
+  {% for p in pending_providers %}
+  <p><strong>{{ p.display_name }}</strong> · {{ p.phone }} · {{ p.areas.all|join:", " }}
+     <a class="btn btn-sm" href="{% url 'admin_providers' %}?tab=pending">Review</a></p>
+  {% empty %}<p class="muted">Nothing pending. 🎉</p>{% endfor %}
+</div>
+
+<div class="card">
+  <h3>Recent bookings</h3>
+  <table class="tbl">
+    <tr><th>Ref</th><th>Customer</th><th>Provider</th><th>Status</th></tr>
+    {% for b in recent_bookings %}
+    <tr><td>{{ b.ref_code }}</td><td>{{ b.customer_name }}</td><td>{{ b.provider.display_name }}</td>
+        <td><span class="status st-{{ b.status }}">{{ b.get_status_display }}</span></td></tr>
+    {% empty %}<tr><td colspan="4" class="muted">No bookings yet.</td></tr>{% endfor %}
+  </table>
+</div>
+{% endblock %}

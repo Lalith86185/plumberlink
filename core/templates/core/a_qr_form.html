@@ -1,0 +1,14 @@
+{% extends "core/a_base.html" %}
+{% block acontent %}
+<h1>New QR code</h1>
+<div class="card">
+<form method="post">
+  {% csrf_token %}
+  {% for f in form %}
+  <div class="field">{{ f.label_tag }}{{ f }}{% if f.help_text %}<div class="helptext">{{ f.help_text }}</div>{% endif %}{{ f.errors }}</div>
+  {% endfor %}
+  <button class="btn btn-block" type="submit">Generate QR code</button>
+</form>
+<p class="muted small">Tip: pick a locality and the QR opens the plumber list pre-filtered to that area.</p>
+</div>
+{% endblock %}

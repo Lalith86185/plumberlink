@@ -1,0 +1,41 @@
+{% extends "core/base.html" %}
+{% block content %}
+<div class="hero">
+  <h1>Need a plumber in Bengaluru?</h1>
+  <p>Find trusted local plumbers near you. Call directly or request a booking in under a minute.</p>
+  <form class="searchbar" method="get" action="{% url 'home' %}">
+    <select name="locality" required>
+      <option value="">📍 Select your locality…</option>
+      {% for l in localities %}<option value="{{ l.slug }}">{{ l.name }}</option>{% endfor %}
+    </select>
+    <button class="btn btn-sm" style="padding:12px 22px" type="submit">Find plumbers</button>
+  </form>
+</div>
+
+<h2>Services</h2>
+<div class="grid">
+  <a class="card pro-card" style="text-decoration:none;color:inherit" href="{% url 'provider_list' %}">
+    <div class="avatar">🔧</div>
+    <div><strong>Plumber</strong><br>
+      <span class="muted small">Tap repair · Pipe leakage · Bathroom plumbing · Drain blockage · Water tank work · Emergency</span>
+    </div>
+  </a>
+  {% for c in service_categories %}{% if c.slug != "plumber" %}
+  <div class="card pro-card" style="opacity:{% if c.active %}1{% else %}.6{% endif %}">
+    <div class="avatar">🛠️</div>
+    <div><strong>{{ c.name }}</strong><br><span class="muted small">{% if c.active %}Now live{% else %}Coming soon{% endif %}</span></div>
+  </div>
+  {% endif %}{% endfor %}
+</div>
+
+<div class="card">
+  <h3>How it works</h3>
+  <ol>
+    <li><strong>Pick your locality</strong> — see plumbers who actually serve your area.</li>
+    <li><strong>Compare profiles</strong> — ratings, reviews, services and starting prices.</li>
+    <li><strong>Call or book</strong> — request a booking and track it with your reference code.</li>
+    <li><strong>Rate the work</strong> — your review keeps quality high.</li>
+  </ol>
+  <p class="muted small">For plumbers: <a href="{% url 'provider_register' %}">register free</a> and get listed after a quick verification.</p>
+</div>
+{% endblock %}

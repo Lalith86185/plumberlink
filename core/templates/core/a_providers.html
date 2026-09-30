@@ -1,0 +1,31 @@
+{% extends "core/a_base.html" %}
+{% block acontent %}
+<h1>Providers</h1>
+<div class="tabs">
+  <a href="?tab=pending" class="{% if tab == 'pending' %}on{% endif %}">⏳ Pending ({{ pending_count }})</a>
+  <a href="?tab=listed" class="{% if tab == 'listed' %}on{% endif %}">✅ Listed</a>
+  <a href="?tab=all" class="{% if tab == 'all' %}on{% endif %}">All</a>
+  <a href="?tab=demo" class="{% if tab == 'demo' %}on{% endif %}">🧪 Demo</a>
+</div>
+{% for p in providers %}
+<div class="card">
+  <p><strong>{{ p.display_name }}</strong>
+    {% if p.is_demo %}<span class="badge badge-demo">DEMO</span>{% endif %}
+    {% if p.is_featured %}<span class="badge badge-featured">★ Featured</span>{% endif %}
+    {% if p.is_listed %}<span class="badge">Listed</span>{% else %}<span class="badge" style="background:#fee2e2;color:#991b1b">Hidden</span>{% endif %}
+    <span class="muted small">· {{ p.user.username }} · since {{ p.created_at|date:"d M Y" }}</span></p>
+  <p class="small">📞 {{ p.phone }} · {{ p.experience_years }} yrs · {{ p.areas.all|join:", " }}<br>
+     <span class="muted">{{ p.bio|truncatewords:20 }}</span></p>
+  <form method="post" class="inline-form">
+    {% csrf_token %}<input type="hidden" name="provider_id" value="{{ p.id }}">
+    <div class="actions-row no-print">
+      {% if not p.is_approved %}<button class="btn btn-ok btn-sm" name="action" value="approve">✅ Approve</button>{% endif %}
+      {% if p.is_approved %}<button class="btn btn-ghost btn-sm" name="action" value="reject">🚫 Reject/hide</button>{% endif %}
+      {% if not p.is_featured %}<button class="btn btn-sm" name="action" value="feature">⭐ Feature</button>
+      {% else %}<button class="btn btn-ghost btn-sm" name="action" value="unfeature">☆ Unfeature</button>{% endif %}
+      <button class="btn btn-danger btn-sm" name="action" value="delete" onclick="return confirm('Remove this provider and their account? Used for spam/fake cleanup.')">🗑 Remove</button>
+    </div>
+  </form>
+</div>
+{% empty %}<div class="card"><p class="muted">Nobody here.</p></div>{% endfor %}
+{% endblock %}

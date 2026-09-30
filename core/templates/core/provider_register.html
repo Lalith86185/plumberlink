@@ -1,0 +1,21 @@
+{% extends "core/base.html" %}
+{% block title %}Join as a plumber{% endblock %}
+{% block content %}
+<h1>Join {{ brand_name }} as a plumber</h1>
+<p class="muted">Free to register. Your profile goes live after a quick verification by our team.</p>
+<div class="card">
+<form method="post">
+  {% csrf_token %}
+  {% for f in form %}
+  <div class="field">
+    {{ f.label_tag }}
+    {% if f.name == "areas" or f.name == "services" %}<ul class="checklist">{% for c in f %}<li>{{ c }}</li>{% endfor %}</ul>
+    {% else %}{{ f }}{% endif %}
+    {% if f.help_text %}<div class="helptext">{{ f.help_text }}</div>{% endif %}{{ f.errors }}
+  </div>
+  {% endfor %}
+  <button class="btn btn-block" type="submit">Register</button>
+</form>
+<p class="muted small">Already registered? <a href="{% url 'provider_login' %}">Log in</a>.</p>
+</div>
+{% endblock %}

@@ -1,0 +1,14 @@
+{% extends "core/base.html" %}
+{% block title %}Track booking{% endblock %}
+{% block content %}
+<h1>Track your booking</h1>
+<div class="card">
+<form method="post">
+  {% csrf_token %}
+  {% for f in form %}
+  <div class="field">{{ f.label_tag }}{{ f }}{{ f.errors }}</div>
+  {% endfor %}
+  <button class="btn btn-block" type="submit">Track</button>
+</form>
+</div>
+{% endblock %}

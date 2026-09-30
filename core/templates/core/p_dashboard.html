@@ -1,0 +1,23 @@
+{% extends "core/p_base.html" %}
+{% block pcontent %}
+<h1>Hello, {{ profile.display_name }} 👋</h1>
+{% if not profile.is_available %}<div class="card"><p>⏸️ Your profile is <strong>paused</strong> — customers can't see or book you. <a href="{% url 'provider_profile' %}">Resume in profile settings</a>.</p></div>{% endif %}
+<div class="kpis">
+  <div class="kpi"><div class="n">{{ by_status.requested|default:0 }}</div><div class="l">New requests</div></div>
+  <div class="kpi"><div class="n">{{ by_status.accepted|default:0 }}</div><div class="l">Accepted</div></div>
+  <div class="kpi"><div class="n">{{ by_status.completed|default:0 }}</div><div class="l">Completed</div></div>
+  <div class="kpi"><div class="n">★ {{ profile.rating_avg }}</div><div class="l">{{ profile.rating_count }} reviews</div></div>
+  <div class="kpi"><div class="n">₹{{ earnings_total }}</div><div class="l">Platform charges</div></div>
+</div>
+<div class="card">
+  <h3>Latest bookings</h3>
+  <table class="tbl">
+    <tr><th>Ref</th><th>Customer</th><th>Service</th><th>Status</th></tr>
+    {% for b in recent %}
+    <tr><td><a href="{% url 'provider_bookings' %}?status=">{{ b.ref_code }}</a></td><td>{{ b.customer_name }}</td>
+        <td>{{ b.service|default:"—" }}</td><td><span class="status st-{{ b.status }}">{{ b.get_status_display }}</span></td></tr>
+    {% empty %}<tr><td colspan="4" class="muted">No bookings yet. Share your profile link to get your first lead!</td></tr>{% endfor %}
+  </table>
+  <div class="actions-row"><a class="btn btn-sm" href="{% url 'provider_bookings' %}">Manage bookings</a></div>
+</div>
+{% endblock %}

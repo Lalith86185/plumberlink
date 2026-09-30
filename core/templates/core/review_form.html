@@ -1,0 +1,14 @@
+{% extends "core/base.html" %}
+{% block title %}Rate your service{% endblock %}
+{% block content %}
+<h1>Rate your service</h1>
+<p class="muted">Booking {{ booking.ref_code }} · {{ booking.provider.display_name }} · {{ booking.service|default:"Plumbing work" }}</p>
+<div class="card">
+<form method="post">
+  {% csrf_token %}
+  <div class="field">{{ form.rating.label_tag }}{{ form.rating }}{{ form.rating.errors }}</div>
+  <div class="field">{{ form.comment.label_tag }}{{ form.comment }}{{ form.comment.errors }}</div>
+  <button class="btn btn-block" type="submit">Submit review</button>
+</form>
+</div>
+{% endblock %}

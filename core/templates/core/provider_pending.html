@@ -1,0 +1,10 @@
+{% extends "core/base.html" %}
+{% block title %}Verification pending{% endblock %}
+{% block content %}
+<div class="card" style="text-align:center;padding:40px 20px">
+  <h1>⏳ Verification pending</h1>
+  <p>Thanks, <strong>{{ profile.display_name }}</strong>! Your profile is with our team for a quick verification.</p>
+  <p class="muted">This usually takes less than a day. Your profile will appear in customer search once approved.</p>
+  <a class="btn btn-ghost" href="{% url 'provider_logout' %}">Log out</a>
+</div>
+{% endblock %}
